@@ -8,6 +8,10 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@chakra-ui/icons": "^2.1.1",
+    "@chakra-ui/react": "^2.8.1",
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
     "@headlessui/react": "^1.7.17",
     "@heroicons/react": "^2.0.18",
     "@planetscale/database": "^1.11.0",
@@ -21,6 +25,7 @@
     "chart.js": "^4.4.0",
     "eslint": "8.48.0",
     "eslint-config-next": "13.4.19",
+    "framer-motion": "^10.16.4",
     "js-cookie": "^3.0.5",
     "kysely": "^0.26.3",
     "kysely-planetscale": "^1.4.0",

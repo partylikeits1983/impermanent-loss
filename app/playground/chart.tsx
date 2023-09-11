@@ -1,6 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
+
+import { ChakraProvider, Flex, Input, FormControl, FormLabel } from "@chakra-ui/react";
+
+
 import { Line } from 'react-chartjs-2';
 import { Chart, registerables} from 'chart.js';
 
@@ -43,25 +47,26 @@ export default function ILChart() {
   }
 
   function calculateAmounts(p: number, a: number, b: number, x: number, y: number, P1: number): [number, number] {
-      const sp = Math.sqrt(p);
-      const sa = Math.sqrt(a);
-      const sb = Math.sqrt(b);
-      let L = getLiquidity(x, y, sp, sa, sb);
+    let sp = Math.sqrt(p);
+    const sa = Math.sqrt(a);
+    const sb = Math.sqrt(b);
+    let L = getLiquidity(x, y, sp, sa, sb); // Assuming getLiquidity function is defined elsewhere
 
-      const sp1 = Math.sqrt(P1);
+    let sp1 = Math.sqrt(P1);
 
-      const x1 = calculateX(L, sp1, sa, sb);
-      const y1 = calculateY(L, sp1, sa, sb);
+    sp = Math.max(Math.min(sp, sb), sa);
+    sp1 = Math.max(Math.min(sp1, sb), sa);
 
-      const deltaP = sp1 - sp;
-      const deltaInvP = 1 / sp1 - 1 / sp;
-      const deltaX = deltaInvP * L;
-      const deltaY = deltaP * L;
-      const newX = x + deltaX;
-      const newY = y + deltaY;
+    const deltaP = sp1 - sp;
+    const deltaInvP = 1 / sp1 - 1 / sp;
+    const deltaX = deltaInvP * L;
+    const deltaY = deltaP * L;
+    let newX = x + deltaX;
+    let newY = y + deltaY;
 
-      return [newX, newY];
-  }
+    return [newX, newY];
+}
+
 
   function findMaxX(p: number, a: number, b: number, vMax: number): number {
       const sp = Math.sqrt(p);
@@ -91,8 +96,8 @@ export default function ILChart() {
       shortPrice: number,
       maximumValue: number
   ): [number | null, number | null] {
-      const tolerance = 0.1; // a small tolerance for comparing PNLs; adjust as needed
-      const step = 0.1; // the step size for our loop, making our results 10 times finer
+      const tolerance = 1; // a small tolerance for comparing PNLs; adjust as needed
+      const step = 0.5; // the step size for our loop, making our results 10 times finer
 
       let initialPortfolioValueV3 = 0;
 
@@ -136,19 +141,20 @@ export default function ILChart() {
         initial_portfolio_value_short *= 0.75;
       
         const x = findMaxX(p, a, b, initial_portfolio_value_v3);
-        const y = maximumPortfolioValue - x * p;
-      
+        const y = initial_portfolio_value_v3 - x * p;
+
         const P1_values: number[] = [];
         const values_original: number[] = [];
         const values_combined: number[] = [];
-      
+
         for (let P1 = 500; P1 <= 1500; P1++) {
           const [x1, y1] = calculateAmounts(p, a, b, x, y, P1);
           const value_original = x1 * P1 + y1;
+
           const profit_loss = (short_price - P1) / short_price;
           const PNL_short = initial_portfolio_value_short * profit_loss * leverage;
           const value_combined = value_original + PNL_short;
-      
+
           P1_values.push(P1);
           values_original.push(value_original);
           values_combined.push(value_combined);
@@ -168,11 +174,11 @@ export default function ILChart() {
   }
   
   const leverage = 1;
-  const p = 1000;
-  const a = 900;
-  const b = 1100;
-  const short_price = 1000;
-  const maximumPortfolioValue = 1000;
+  const [p, setP] = useState(1000);
+  const [a, setA] = useState(900);
+  const [b, setB] = useState(1100);
+  const [short_price, setShortPrice] = useState(1000);
+  const [maximumPortfolioValue, setMaximumPortfolioValue] = useState(1000);
 
   const data = combinedPlot(p, a, b, maximumPortfolioValue);
 
@@ -180,13 +186,13 @@ export default function ILChart() {
     labels: data.P1_values,
     datasets: [
         {
-            label: 'Original Values',
+            label: 'Uniswap V3 LP Position',
             data: data.values_original,
             borderColor: 'rgba(75,192,192,1)',
             fill: false,
         },
         {
-            label: 'Combined Values',
+            label: 'Uniswap V3 LP Position + Short',
             data: data.values_combined,
             borderColor: 'rgba(255,99,132,1)',
             fill: false,
@@ -194,15 +200,42 @@ export default function ILChart() {
     ],
 };
 
+interface NumberInputFieldProps {
+  label: string;
+  value: number;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}
+
+const NumberInputField: React.FC<NumberInputFieldProps> = ({ label, value, onChange }) => (
+  <FormControl display="flex" alignItems="center">
+      <FormLabel mb="0" mr="2">{label}</FormLabel>
+      <Input type="number" value={value} onChange={onChange} size="sm" w="full" maxWidth="200px" />
+  </FormControl>
+);
+
 return (
+
     <>
         <div className="mt-8">
             <h1>Impermanent Loss</h1>
-            <h2>HEDGE</h2>
+
+
+
             <div className="chart-container" style={{ width: '80%', height: '400px' }}>
                 <Line data={chartData} />
             </div>
+
+
         </div>
     </>
+
 );
 };
+/*
+            <Flex direction="column">
+            <NumberInputField label="p:" value={p} onChange={(e) => setP(+e.target.value)} />
+            <NumberInputField label="a:" value={a} onChange={(e) => setA(+e.target.value)} />
+            <NumberInputField label="b:" value={b} onChange={(e) => setB(+e.target.value)} />
+            <NumberInputField label="max portfolio value:" value={maximumPortfolioValue} onChange={(e) => setMaximumPortfolioValue(+e.target.value)} />
+        </Flex>
+*/
